@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Income\CreateIncomeRequest;
+use App\Http\Resources\Incomes\IncomeResource;
 use Exception;
 use Illuminate\Http\Request;
 
@@ -12,36 +13,23 @@ use App\Models\Income;
 
 class IncomesController extends Controller
 {
-        public function store(CreateIncomeRequest $request)
+    public function store(CreateIncomeRequest $request)
     {
-        try{
-            $income = new Income;
+        $income = new Income;
         $income->title = $request->title;
         $income->amount = $request->amount;
-        $income->date = $request->date;
+        $income->entry_date = $request->entry_date;
         $income->description = $request->description;
+        $income->category_id = $request->category_id;
         $income->user_id = auth()->id();
         $income->save();
-        }catch(Exception $e){
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Error creating income record',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-        
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Income record created successfully',
-        ], 201);
+        $income->load('category');
+        return new IncomeResource($income);
     }
 
         public function index(Request $request)
     {
         $limit = $request->query('limit', 10);
-        $sortColumn = $request->query('sort_column', 'id');
-        $sortOrder = $request->query('sort_order', 'desc');
 
         $title = $request->query('title');
         $startDate = $request->query('start_date');
@@ -68,17 +56,19 @@ class IncomesController extends Controller
         });
 
         $incomes = $incomes->where('user_id', auth()->id())
-                        ->orderBy($sortColumn, $sortOrder)
-                        ->paginate($limit);
+                    ->with('category')
+                    ->paginate($limit);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $incomes,
-        ]);
+        return IncomeResource::collection($incomes);
     }
 
     public function show(Income $income)
     {
+        $income->load('category');
+        if (!$income) {
+            return response()->json(["No Incomes Data"], 404);
+        }
+
         if ($income->user_id !== auth()->id()) {
             return response()->json([
                 'status' => 'error',
@@ -86,10 +76,7 @@ class IncomesController extends Controller
             ], 403);
         }
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $income,
-        ]);
+        return new IncomeResource($income);
     }
 
     public function update(CreateIncomeRequest $request, Income $income)

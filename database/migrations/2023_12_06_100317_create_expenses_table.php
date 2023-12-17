@@ -14,6 +14,7 @@ return new class extends Migration
     {
         Schema::create('expenses', function (Blueprint $table) {
             $table->id('expense_id');
+            $table->string('title', 100);
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('user_id')->on('users');
             $table->decimal('amount', 8, 2);
@@ -23,8 +24,8 @@ return new class extends Migration
             $table->date('entry_date');
             $table->timestamp('created_at')->useCurrent();
         });
-
-         DB::statement("
+    
+        DB::statement("
             CREATE OR REPLACE FUNCTION expenses_audit_trigger()
             RETURNS TRIGGER AS $$
             BEGIN
@@ -34,7 +35,7 @@ return new class extends Migration
             END;
             $$ LANGUAGE plpgsql;
         ");
-
+    
         DB::statement("
             CREATE TRIGGER expenses_audit
             AFTER INSERT ON expenses
@@ -48,6 +49,11 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::table('expenses', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
+            $table->dropForeign(['category_id']);
+        });
+    
         Schema::dropIfExists('expenses');
     }
 };

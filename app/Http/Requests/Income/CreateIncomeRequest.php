@@ -20,21 +20,14 @@ class CreateIncomeRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
+    public function rules()
     {
         return [
-            'title' => ['string', 'required', 'max:100'],
-            'amount' => ['numeric', 'required'],
-            'date' => ['date', 'required'],
-            'categories' => ['required'],
-            'description' => ['string', 'nullable'],
-        ];
-    }
-
-    public function messages(): array
-    {
-        return [
-            'categories.required' => 'Please select at least one category',
+            'title' => 'required|string|max:255',
+            'amount' => 'required|numeric',
+            'entry_date' => 'required|date',
+            'description' => 'nullable|string',
+            'category_id' => 'required|integer|exists:categories,category_id',
         ];
     }
 }

@@ -4,32 +4,43 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Expense\CreateExpenseRequest;
+use App\Http\Resources\Expenses\ExpenseResource;
 use App\Models\Expense;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ExpensesController extends Controller
 {
     public function store(CreateExpenseRequest $request)
     {
-        $expense = new Expense;
-        $expense->title = $request->title;
-        $expense->amount = $request->amount;
-        $expense->date = $request->date;
-        $expense->description = $request->description;
-        $expense->user_id = auth()->id();
-        $expense->save();
+        try {
+            $expense = new Expense();
+            $expense->title = $request->title;
+            $expense->entry_date = $request->entry_date;
+            $expense->amount = $request->amount;
+            $expense->description = $request->description;
+            $expense->category_id = $request->category_id;
+            $expense->user_id = auth()->id();
+            $expense->save();
+            Log::info('store method called');
+            return response()->json([
+                'status' => 'success',
+                'message' => 'expense record created successfully',
+                'data' => $expense,
+            ], 201);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Expense record created successfully',
-        ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'failed to create expense item',
+                'error' => $e->getMessage(),
+            ], 500);
+        } 
     }
 
         public function index(Request $request)
     {
         $limit = $request->query('limit', 10);
-        $sortColumn = $request->query('sort_column', 'id');
-        $sortOrder = $request->query('sort_order', 'desc');
 
         $title = $request->query('title');
         $startDate = $request->query('start_date');
@@ -56,29 +67,29 @@ class ExpensesController extends Controller
         });
 
         $expenses = $expenses->where('user_id', auth()->id())
-                        ->orderBy($sortColumn, $sortOrder)
+                        ->with('category')
                         ->paginate($limit);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $expenses,
-        ]);
+        return ExpenseResource::collection($expenses);
     }
 
         public function show(Expense $expense)
-    {
-        if ($expense->user_id !== auth()->id()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'You are not authorized to view this expense record',
-            ], 403);
-        }
+        {   
+            $expense->load('category');
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $expense,
-        ]);
-    }
+            if (!$expense) {
+                return response()->json([], 404);
+            }
+        
+            if ($expense->user_id !== auth()->id()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'You are not authorized to view this expense record',
+                ], 403);
+            }
+        
+            return new ExpenseResource($expense);
+        }
 
         public function update(CreateExpenseRequest $request, Expense $expense)
     {
@@ -95,10 +106,7 @@ class ExpensesController extends Controller
         $expense->description = $request->description;
         $expense->save();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Expense record updated successfully',
-        ]);
+        return new ExpenseResource($expense);
     }
 
         public function destroy(Expense $expense)
@@ -112,9 +120,6 @@ class ExpensesController extends Controller
 
         $expense->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Expense record deleted successfully',
-        ]);
+        return new ExpenseResource($expense);
     }
 }

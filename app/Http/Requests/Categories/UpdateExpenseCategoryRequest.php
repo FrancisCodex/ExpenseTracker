@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests\Expense;
+namespace App\Http\Requests\Categories;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 
-class CreateExpenseRequest extends FormRequest
+class UpdateExpenseCategoryRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,11 +23,8 @@ class CreateExpenseRequest extends FormRequest
     public function rules()
     {
         return [
-            'title' => 'required|string|max:255',
-            'amount' => 'required|numeric',
-            'entry_date' => 'required|date',
-            'description' => 'nullable|string',
-            'category_id' => 'required|integer|exists:categories,category_id',
+            'name' => 'sometimes|required|string|max:255',
+            'type' => 'sometimes|required|string|max:100',
         ];
     }
 }
