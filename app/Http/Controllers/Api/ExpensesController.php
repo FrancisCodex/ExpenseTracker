@@ -122,4 +122,19 @@ class ExpensesController extends Controller
 
         return new ExpenseResource($expense);
     }
+
+        public function totalExpenses()
+    {
+        $totalExpenses = Expense::where('user_id', auth()->id())->sum('amount');
+
+        if ($totalExpenses == 0) {
+            return response()->json([
+                'message' => 'You have no expenses'
+            ], 404);
+        }
+
+        return response()->json([
+            'total_expenses' => $totalExpenses
+        ], 200);
+    }
 }

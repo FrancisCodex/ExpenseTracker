@@ -7,6 +7,7 @@ use App\Http\Requests\Income\CreateIncomeRequest;
 use App\Http\Resources\Incomes\IncomeResource;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 
 use App\Models\Income;
@@ -14,7 +15,9 @@ use App\Models\Income;
 class IncomesController extends Controller
 {
     public function store(CreateIncomeRequest $request)
-    {
+    {   
+        Log::info('Request data:', $request->all());
+
         $income = new Income;
         $income->title = $request->title;
         $income->amount = $request->amount;
@@ -43,10 +46,10 @@ class IncomesController extends Controller
             return $query->where('title', 'LIKE', '%' . $title . '%');
         })
         ->when($startDate, function ($query, $startDate) {
-            return $query->whereDate('date', '>=', $startDate);
+            return $query->whereDate('entry_date', '>=', $startDate);
         })
         ->when($endDate, function ($query, $endDate) {
-            return $query->whereDate('date', '<=', $endDate);
+            return $query->whereDate('entry_date', '<=', $endDate);
         })
         ->when($startAmount, function ($query, $startAmount) {
             return $query->where('amount', '>=', $startAmount);
@@ -116,5 +119,21 @@ class IncomesController extends Controller
         'message' => 'Income record deleted successfully',
     ]);
 }
+
+    public function totalIncomes()
+    {
+        $totalIncomes = Income::where('user_id', auth()->id())->sum('amount');
+
+        if ($totalIncomes == 0) {
+            return response()->json([
+                'message' => 'You have no Income'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $totalIncomes,
+        ], 200);
+    }
     
 }

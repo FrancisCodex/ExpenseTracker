@@ -26,11 +26,14 @@ class LoginController extends Controller
     }
     
     protected function respondWithToken($token)
-{
-    return response()->json([
-        'access_token' => $token,
-        'token_type' => 'bearer',
-        'expires_in' => 60 * 60
-    ]);
-}
+    {
+        $minutes = 60;
+        $cookie = cookie('jwt', $token, $minutes, null, null, config('app.env') !== 'local', true);
+    
+        return response()->json([
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => 60 * 60
+        ])->withCookie($cookie);
+    }
 }
