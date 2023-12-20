@@ -14,21 +14,18 @@ return [
     | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
     |
     */
-
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    'allowed_methods' => ['*'],
-
-    'allowed_origins' => ['*'],
-
+    'allowed_origins' => ['*', 'http://localhost:5173', '6da3-2001-4456-16e-1f00-dd89-a9b9-1976-4518.ngrok-free.app'],
+    
     'allowed_origins_patterns' => [],
-
+    
     'allowed_headers' => ['*'],
-
+    
     'exposed_headers' => [],
-
+    
     'max_age' => 0,
-
-    'supports_credentials' => false,
+    
+    'supports_credentials' => true,
 
 ];

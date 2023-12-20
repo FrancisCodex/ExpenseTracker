@@ -30,38 +30,48 @@ class IncomesController extends Controller
         return new IncomeResource($income);
     }
 
-        public function index(Request $request)
+    public function index(Request $request)
     {
-        $limit = $request->query('limit', 10);
-
+        $limit = $request->query('limit') && $request->query('limit') < 100 ? $request->query('limit') : 10;
+    
+        $sort_column = $request->query('sort_column', 'income_id');
+        $sort_order = $request->query('sort_order', 'desc');
+    
         $title = $request->query('title');
-        $startDate = $request->query('start_date');
-        $endDate = $request->query('end_date');
-        $startAmount = $request->query('start_amount');
-        $endAmount = $request->query('end_amount');
-
+    
+        $start_date = $request->query('start_date');
+        $end_date = $request->query('end_date');
+    
+        $start_amount = $request->query('start_amount');
+        $end_amount = $request->query('end_amount');
+    
+        $category = $request->query('category');
+    
         $incomes = Income::query();
-
+    
         $incomes->when($title, function ($query, $title) {
-            return $query->where('title', 'LIKE', '%' . $title . '%');
+            $query->where('title', 'LIKE', '%'.$title.'%');
         })
-        ->when($startDate, function ($query, $startDate) {
-            return $query->whereDate('entry_date', '>=', $startDate);
-        })
-        ->when($endDate, function ($query, $endDate) {
-            return $query->whereDate('entry_date', '<=', $endDate);
-        })
-        ->when($startAmount, function ($query, $startAmount) {
-            return $query->where('amount', '>=', $startAmount);
-        })
-        ->when($endAmount, function ($query, $endAmount) {
-            return $query->where('amount', '<=', $endAmount);
-        });
-
-        $incomes = $incomes->where('user_id', auth()->id())
-                    ->with('category')
-                    ->paginate($limit);
-
+            ->when($start_date, function ($query, $start_date) {
+                $query->whereDate('entry_date', '>=', $start_date);
+            })
+            ->when($end_date, function ($query, $end_date) {
+                $query->whereDate('entry_date', '<=', $end_date);
+            })
+            ->when($start_amount, function ($query, $start_amount) {
+                $query->where('amount', '>=', $start_amount);
+            })
+            ->when($end_amount, function ($query, $end_amount) {
+                $query->where('amount', '<=', $end_amount);
+            })
+            ->when($category, function ($query, $category) {
+                $query->whereHas('category', function ($query) use ($category) {
+                    $query->where('name', $category); // replace 'name' with the actual column name in your categories table
+                });
+            });
+    
+        $incomes = $incomes->orderBy($sort_column, $sort_order)->with('category')->paginate($limit);
+    
         return IncomeResource::collection($incomes);
     }
 
